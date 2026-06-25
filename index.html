@@ -184,8 +184,9 @@
   let loadingHistory = true;
   let clientes = [];
   let motoristas = [];
-  const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuMRPvK2GPqXsX_xWLiTLZMKZb-Xa36SOhBszqi_VaZpvC7-HS5iHSDf5VszsnerHdiw/exec';
-  let scriptUrl = DEFAULT_SCRIPT_URL;
+  const DEFAULT_SCRIPT_URL = '';
+  let scriptUrl = '';
+  let apiKey = '';
   let showSettings = false;
   let sheetsStatus = 'off';
   let loadingToday = false;
@@ -210,7 +211,9 @@
           <h2>Conexão com a planilha</h2>
           <label>URL do Apps Script (termina em /exec)</label>
           <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(scriptUrl)}" />
-          <div class="hint">Usa as abas Oficinas, Motoristas e Movimentações da planilha "Petiko - Oficinas e Costureiras".</div>
+          <label style="margin-top:12px;display:block">Chave de acesso</label>
+          <input type="password" id="apiKeyInput" placeholder="Chave secreta (pk_...)" value="${esc(apiKey)}" />
+          <div class="hint">A chave protege os dados — nunca compartilhe. Fica salva só no seu browser.</div>
           <div class="actions">
             <button class="primary btn-save" id="saveUrlBtn">Salvar e conectar</button>
           </div>
@@ -368,12 +371,15 @@
     root.querySelector('#loadTodayBtn').addEventListener('click', loadTodayFromSheet);
 
     const urlInput = root.querySelector('#scriptUrlInput');
+    const keyInput = root.querySelector('#apiKeyInput');
     if (urlInput) {
       root.querySelector('#saveUrlBtn').addEventListener('click', async () => {
         scriptUrl = urlInput.value.trim();
+        apiKey = keyInput ? keyInput.value.trim() : apiKey;
         try {
           await window.storage.set('config:script-url', scriptUrl, false);
-          showToast('URL salva — carregando dados da planilha…');
+          await window.storage.set('config:api-key', apiKey, false);
+          showToast('Configuração salva — carregando dados da planilha…');
           await loadFromSheets();
           render();
         } catch (e) { showToast('Erro ao salvar a URL'); }
@@ -416,11 +422,11 @@
   }
 
   async function loadTodayFromSheet() {
-    if (!scriptUrl) { showToast('Conecte a planilha primeiro'); return; }
+    if (!scriptUrl || !apiKey) { showToast('Configure a URL e a chave de acesso primeiro'); return; }
     loadingToday = true; render();
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const res = await fetch(scriptUrl + '?action=movimentacoes&data=' + today);
+      const res = await fetch(scriptUrl + '?key=' + encodeURIComponent(apiKey) + '&action=movimentacoes&data=' + today);
       const json = await res.json();
       if (!json.ok) { showToast('Planilha: ' + (json.erro || 'erro ao buscar movimentações')); loadingToday = false; render(); return; }
       if (!json.data.length) { showToast('Nenhuma movimentação registrada para hoje na planilha'); loadingToday = false; render(); return; }
@@ -511,7 +517,7 @@
           link: mapsUrl,
           paradas: validStops
         };
-        const url = scriptUrl + '?action=salvar&data=' + encodeURIComponent(JSON.stringify(payload));
+        const url = scriptUrl + '?key=' + encodeURIComponent(apiKey) + '&action=salvar&data=' + encodeURIComponent(JSON.stringify(payload));
         const res = await fetch(url);
         const json = await res.json();
         synced = !!json.ok;
@@ -553,11 +559,12 @@
   }
 
   async function loadFromSheets() {
-    if (!scriptUrl) { sheetsStatus = 'off'; return; }
+    if (!scriptUrl || !apiKey) { sheetsStatus = 'off'; return; }
+    const base = scriptUrl + '?key=' + encodeURIComponent(apiKey);
     try {
       const [rc, rm] = await Promise.all([
-        fetch(scriptUrl + '?action=clientes').then((r) => r.json()),
-        fetch(scriptUrl + '?action=motoristas').then((r) => r.json())
+        fetch(base + '&action=clientes').then((r) => r.json()),
+        fetch(base + '&action=motoristas').then((r) => r.json())
       ]);
       clientes = rc.ok ? rc.data : [];
       motoristas = rm.ok ? rm.data : [];
@@ -575,8 +582,9 @@
     try {
       const res = await window.storage.get('config:script-url', false);
       if (res && res.value) scriptUrl = res.value;
-      else scriptUrl = DEFAULT_SCRIPT_URL;
-    } catch (e) { scriptUrl = DEFAULT_SCRIPT_URL; }
+      const rk = await window.storage.get('config:api-key', false);
+      if (rk && rk.value) apiKey = rk.value;
+    } catch (e) { /* usa defaults */ }
     try {
       const rn = await window.storage.get('config:origin-name', false);
       if (rn && rn.value) fixedName = rn.value;

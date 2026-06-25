@@ -3,22 +3,26 @@
  * Compatível com a planilha "Petiko - Oficinas e Costureiras.xlsx"
  *
  * COMO CONFIGURAR:
- * 1. Suba a planilha "Petiko - Oficinas e Costureiras.xlsx" para o Google Sheets
- *    (Arquivo > Importar, ou abra direto no Drive). Mantenha os nomes das abas:
- *    "Oficinas", "Motoristas", "Movimentações".
+ * 1. Suba a planilha para o Google Sheets. Abas: "Oficinas", "Motoristas", "Movimentações".
  * 2. Extensões > Apps Script. Cole este código substituindo o conteúdo padrão.
  * 3. Implantar > Nova implantação > tipo "App da Web".
  *    - Executar como: Eu
  *    - Quem tem acesso: Qualquer pessoa
- * 4. Copie a URL gerada (termina em /exec) e cole no campo "URL do Apps Script"
- *    dentro da ferramenta de rotas.
+ * 4. Copie a URL (/exec), a chave secreta abaixo e configure no app de rotas.
  *
- * O Cleiton preenche a aba "Movimentações" com a rota do dia (Data, Oficina,
- * Tipo, Observação, etc). A ferramenta de rotas busca essas linhas pela data
- * de hoje e já vem com os endereços preenchidos, prontos para revisar e enviar.
+ * SEGURANÇA: todas as requisições precisam enviar ?key=SECRET_KEY.
+ * Para trocar a chave, edite SECRET_KEY abaixo e faça uma nova implantação.
  */
 
+// 🔑 Chave secreta — altere se precisar revogar acesso
+var SECRET_KEY = 'pk_ced515350194';
+
 function doGet(e) {
+  // 🔒 Verificação de chave secreta
+  if (!e.parameter.key || e.parameter.key !== SECRET_KEY) {
+    return jsonOut({ ok: false, erro: 'Acesso não autorizado. Chave inválida ou ausente.' });
+  }
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var action = e.parameter.action;
 
