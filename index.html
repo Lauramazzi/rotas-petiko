@@ -550,7 +550,8 @@
       if (!rm.ok) showToast('Planilha: ' + (rm.erro || 'erro ao ler Motoristas'));
     } catch (e) {
       sheetsStatus = 'error';
-      showToast('Não consegui conectar à planilha — confira a URL');
+      console.error('[rotas-petiko] Erro ao conectar à planilha:', e);
+      showToast('Erro: ' + (e.message || 'não foi possível conectar à planilha'));
     }
   }
 
