@@ -171,8 +171,10 @@
 (function () {
   const root = document.getElementById('rotas-app');
 
-  const FIXED_NAME = 'Paws e Plush';
-  const FIXED_ADDR = 'R. Lions Club - Vila Marina, São Carlos - SP, 13566-370';
+  const DEFAULT_ORIGIN_NAME = 'Paws e Plush';
+  const DEFAULT_ORIGIN_ADDR = 'R. Lions Club - Vila Marina, São Carlos - SP, 13566-370';
+  let fixedName = DEFAULT_ORIGIN_NAME;
+  let fixedAddr = DEFAULT_ORIGIN_ADDR;
   const TIPOS = ['Coleta', 'Entrega', 'Coleta e Entrega', 'Visita'];
 
   let stops = [{ name: '', addr: '', tipo: 'Entrega', obs: '' }, { name: '', addr: '', tipo: 'Coleta', obs: '' }];
@@ -221,8 +223,12 @@
             ${loadingToday ? 'Carregando…' : '↓ Carregar rota de hoje da planilha (Movimentações)'}
           </button>
           <div class="field">
-            <label>Ponto de partida e retorno</label>
-            <input type="text" id="fixedName" value="${esc(FIXED_NAME)}" />
+            <label>Ponto de partida e retorno — Nome</label>
+            <input type="text" id="fixedName" value="${esc(fixedName)}" placeholder="Ex: Paws e Plush" />
+          </div>
+          <div class="field">
+            <label>Ponto de partida e retorno — Endereço</label>
+            <input type="text" id="fixedAddr" value="${esc(fixedAddr)}" placeholder="Ex: R. Lions Club - Vila Marina, São Carlos" />
           </div>
           <div id="stopsList"></div>
           <button class="add-stop" id="addStopBtn">+ Adicionar parada manualmente</button>
@@ -348,7 +354,16 @@
   }
 
   function bindStaticEvents() {
-    root.querySelector('#fixedName').addEventListener('input', updatePreviewAndLinks);
+    root.querySelector('#fixedName').addEventListener('input', (e) => { fixedName = e.target.value; updatePreviewAndLinks(); });
+    root.querySelector('#fixedAddr').addEventListener('input', async (e) => {
+      fixedAddr = e.target.value;
+      await window.storage.set('config:origin-addr', fixedAddr, false);
+      updatePreviewAndLinks();
+    });
+    root.querySelector('#fixedName').addEventListener('change', async (e) => {
+      fixedName = e.target.value;
+      await window.storage.set('config:origin-name', fixedName, false);
+    });
     root.querySelector('#toggleSettings').addEventListener('click', () => { showSettings = !showSettings; render(); });
     root.querySelector('#loadTodayBtn').addEventListener('click', loadTodayFromSheet);
 
@@ -435,26 +450,27 @@
   }
 
   function buildData() {
-    const fixedName = root.querySelector('#fixedName').value.trim() || FIXED_NAME;
+    const name = fixedName.trim() || DEFAULT_ORIGIN_NAME;
+    const addr = fixedAddr.trim() || DEFAULT_ORIGIN_ADDR;
     const validStops = stops.filter((s) => s.addr.trim());
-    const addresses = [FIXED_ADDR, ...validStops.map((s) => s.addr), FIXED_ADDR];
+    const addresses = [addr, ...validStops.map((s) => s.addr), addr];
     const mapsUrl = 'https://www.google.com/maps/dir/' +
       addresses.map((a) => encodeURIComponent(a).replace(/%20/g, '+')).join('/');
 
-    const names = [fixedName, ...validStops.map((s) => s.name || s.addr.split(',')[0])];
-    const routeLabel = 'Rota — ' + names.join(' → ') + ' → ' + fixedName;
+    const names = [name, ...validStops.map((s) => s.name || s.addr.split(',')[0])];
+    const routeLabel = 'Rota — ' + names.join(' → ') + ' → ' + name;
 
     let msg = routeLabel + '\n\n';
-    msg += fixedName + '\n' + FIXED_ADDR + '\n\n';
+    msg += name + '\n' + addr + '\n\n';
     validStops.forEach((s) => {
       msg += (s.name || '(sem nome)') + ' (' + tipoLabel(s.tipo) + ')\n' + s.addr + '\n';
       if (s.obs.trim()) msg += 'Obs: ' + s.obs.trim() + '\n';
       msg += '\n';
     });
-    msg += 'Retorno ' + fixedName + '\n\n';
+    msg += 'Retorno ' + name + '\n\n';
     msg += mapsUrl;
 
-    return { fixedName, validStops, mapsUrl, routeLabel, msg };
+    return { fixedName: name, validStops, mapsUrl, routeLabel, msg };
   }
 
   function updatePreviewAndLinks() {
@@ -561,6 +577,12 @@
       if (res && res.value) scriptUrl = res.value;
       else scriptUrl = DEFAULT_SCRIPT_URL;
     } catch (e) { scriptUrl = DEFAULT_SCRIPT_URL; }
+    try {
+      const rn = await window.storage.get('config:origin-name', false);
+      if (rn && rn.value) fixedName = rn.value;
+      const ra = await window.storage.get('config:origin-addr', false);
+      if (ra && ra.value) fixedAddr = ra.value;
+    } catch (e) { /* usa defaults */ }
     await loadFromSheets();
     render();
   }
