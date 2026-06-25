@@ -159,7 +159,8 @@
   let loadingHistory = true;
   let clientes = [];
   let motoristas = [];
-  let scriptUrl = '';
+  const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuMRPvK2GPqXsX_xWLiTLZMKZb-Xa36SOhBszqi_VaZpvC7-HS5iHSDf5VszsnerHdiw/exec';
+  let scriptUrl = DEFAULT_SCRIPT_URL;
   let showSettings = false;
   let sheetsStatus = 'off';
   let loadingToday = false;
@@ -534,7 +535,8 @@
     try {
       const res = await window.storage.get('config:script-url', false);
       if (res && res.value) scriptUrl = res.value;
-    } catch (e) { /* not set yet */ }
+      else scriptUrl = DEFAULT_SCRIPT_URL;
+    } catch (e) { scriptUrl = DEFAULT_SCRIPT_URL; }
     await loadFromSheets();
     render();
   }
