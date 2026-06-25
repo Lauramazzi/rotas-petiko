@@ -1,0 +1,562 @@
+<div id="rotas-app"></div>
+<style>
+  #rotas-app, #rotas-app * { box-sizing: border-box; }
+  #rotas-app {
+    --ink: #00566B;
+    --paper: #F4F8FA;
+    --card: #ffffff;
+    --route: #0082A0;
+    --route-dark: #00697F;
+    --route-light: #E3F2F6;
+    --gold: #FFCC1B;
+    --pin: #C4622D;
+    --line: #DCE6EA;
+    --muted: #6B7989;
+
+    font-family: 'Baloo 2', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  #rotas-app .topbar {
+    background: #fff; border-bottom: 3px solid var(--route);
+    padding: 14px 20px; display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 26px;
+  }
+  #rotas-app .topbar .logo {
+    font-family: 'Caveat', 'Segoe Script', cursive; font-size: 28px; font-weight: 700;
+    color: var(--route); line-height: 1;
+  }
+  #rotas-app .topbar .logo .dot { color: var(--gold); }
+  #rotas-app .topbar .pagetitle { font-weight: 800; font-size: 15.5px; color: var(--ink); }
+
+  #rotas-app .wrap { max-width: 660px; margin: 0 auto; padding: 0 16px; }
+
+  #rotas-app .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 20px; font-family: 'Nunito', sans-serif; }
+
+  #rotas-app .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,40,50,0.05); }
+  #rotas-app .card h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+    margin: 0 0 14px; font-weight: 700; font-family: 'Nunito', sans-serif;
+  }
+
+  #rotas-app .settings-toggle {
+    background: none; border: none; color: var(--muted); font-size: 12px; text-decoration: underline;
+    cursor: pointer; padding: 0; margin-bottom: 8px; font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .status-pill {
+    display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-left: 8px;
+    background: var(--route-light); color: var(--route-dark); font-weight: 700; font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .status-pill.off { background: #f3e3d8; color: var(--pin); }
+
+  #rotas-app label { font-size: 12.5px; color: var(--muted); display: block; margin-bottom: 4px; font-family: 'Nunito', sans-serif; }
+  #rotas-app input[type=text], #rotas-app input[type=tel], #rotas-app select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 14px; font-family: 'Nunito', sans-serif; background: #fff; color: var(--ink); margin-bottom: 8px;
+  }
+  #rotas-app input:focus, #rotas-app select:focus { outline: 2px solid var(--route); outline-offset: 1px; }
+
+  #rotas-app .driver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #rotas-app .driver-row.has-select { grid-template-columns: 1fr; }
+
+  #rotas-app .stop {
+    border-left: 3px solid var(--route);
+    padding: 10px 0 4px 14px; margin-bottom: 12px; position: relative;
+  }
+  #rotas-app .stop-num {
+    position: absolute; left: -11px; top: 8px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--route); color: #fff; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .stop-grid2 { display: grid; grid-template-columns: 1fr 150px; gap: 8px; }
+  #rotas-app .stop-actions { display: flex; justify-content: flex-end; margin-top: -4px; }
+  #rotas-app .remove-btn { background: none; border: none; color: var(--pin); font-size: 12px; cursor: pointer; padding: 2px 4px; font-family: 'Nunito', sans-serif; }
+  #rotas-app .remove-btn:hover { text-decoration: underline; }
+  #rotas-app .remove-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #rotas-app .add-stop {
+    width: 100%; padding: 11px; border: 1.5px dashed var(--route); background: var(--route-light);
+    color: var(--route-dark); border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 2px;
+    font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .add-stop:hover { background: #d4eaf0; }
+
+  #rotas-app .load-today {
+    width: 100%; padding: 11px; border: none; background: var(--ink);
+    color: #fff; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 16px;
+    font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .load-today:hover { background: #003e4e; }
+  #rotas-app .load-today:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #rotas-app .field { margin-bottom: 12px; }
+  #rotas-app .hint { font-size: 11.5px; color: var(--muted); margin: -4px 0 10px; font-family: 'Nunito', sans-serif; }
+
+  #rotas-app .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  #rotas-app button.primary, #rotas-app a.primary {
+    flex: 1; min-width: 140px; padding: 13px 16px; border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: inline-block;
+    font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .btn-maps { background: var(--ink); color: #fff; }
+  #rotas-app .btn-maps:hover { background: #003e4e; }
+  #rotas-app .btn-wpp { background: #25d366; color: #06320f; }
+  #rotas-app .btn-wpp:hover { background: #20bd5a; }
+  #rotas-app .btn-save { background: var(--route); color: #fff; }
+  #rotas-app .btn-save:hover { background: var(--route-dark); }
+  #rotas-app button:disabled, #rotas-app a.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+  #rotas-app .preview {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+    font-size: 13px; white-space: pre-wrap; color: var(--ink); margin-top: 14px; line-height: 1.55; display: none;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  #rotas-app .hist-item {
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;
+  }
+  #rotas-app .hist-info { font-size: 13px; font-family: 'Nunito', sans-serif; }
+  #rotas-app .hist-date { font-weight: 700; color: var(--route-dark); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  #rotas-app .hist-route { margin-top: 3px; color: var(--ink); }
+  #rotas-app .hist-synced { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  #rotas-app .hist-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  #rotas-app .hist-actions a, #rotas-app .hist-actions button {
+    font-size: 11.5px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); cursor: pointer; text-decoration: none; font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .hist-actions a:hover, #rotas-app .hist-actions button:hover { background: var(--route-light); border-color: var(--route); }
+  #rotas-app .hist-del { color: var(--pin); border-color: transparent; }
+
+  #rotas-app .empty, #rotas-app .loading { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 0; font-family: 'Nunito', sans-serif; }
+
+  #rotas-app .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 11px 18px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.25s ease;
+    pointer-events: none; z-index: 50; font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .toast.show { opacity: 1; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+
+<script>
+(function () {
+  const root = document.getElementById('rotas-app');
+
+  const FIXED_NAME = 'Paws e Plush';
+  const FIXED_ADDR = 'R. Lions Club - Vila Marina, São Carlos - SP, 13566-370';
+  const TIPOS = ['Coleta', 'Entrega', 'Coleta e Entrega', 'Visita'];
+
+  let stops = [{ name: '', addr: '', tipo: 'Entrega', obs: '' }, { name: '', addr: '', tipo: 'Coleta', obs: '' }];
+  let driverName = '';
+  let driverPhone = '';
+  let history = [];
+  let loadingHistory = true;
+  let clientes = [];
+  let motoristas = [];
+  let scriptUrl = '';
+  let showSettings = false;
+  let sheetsStatus = 'off';
+  let loadingToday = false;
+
+  function render() {
+    root.innerHTML = `
+      <div class="topbar">
+        <span class="logo">Petik<span class="dot">o</span></span>
+        <span class="pagetitle">Rotas — Oficinas e Costureiras</span>
+      </div>
+      <div class="wrap">
+        <p class="sub">Monte a rota, gere o link do Maps e a mensagem pro motorista — tudo registrado na planilha.
+          <span class="status-pill ${sheetsStatus === 'on' ? '' : 'off'}">
+            ${sheetsStatus === 'on' ? 'Conectado à planilha' : 'Planilha não conectada'}
+          </span>
+        </p>
+
+        <button class="settings-toggle" id="toggleSettings">${showSettings ? 'ocultar configuração ▲' : 'configurar conexão com a planilha ▼'}</button>
+
+        ${showSettings ? `
+        <div class="card">
+          <h2>Conexão com a planilha</h2>
+          <label>URL do Apps Script (termina em /exec)</label>
+          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(scriptUrl)}" />
+          <div class="hint">Usa as abas Oficinas, Motoristas e Movimentações da planilha "Petiko - Oficinas e Costureiras".</div>
+          <div class="actions">
+            <button class="primary btn-save" id="saveUrlBtn">Salvar e conectar</button>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="card">
+          <h2>Paradas de hoje</h2>
+          <button class="load-today" id="loadTodayBtn" ${sheetsStatus !== 'on' ? 'disabled' : ''}>
+            ${loadingToday ? 'Carregando…' : '↓ Carregar rota de hoje da planilha (Movimentações)'}
+          </button>
+          <div class="field">
+            <label>Ponto de partida e retorno</label>
+            <input type="text" id="fixedName" value="${esc(FIXED_NAME)}" />
+          </div>
+          <div id="stopsList"></div>
+          <button class="add-stop" id="addStopBtn">+ Adicionar parada manualmente</button>
+
+          <div class="field" style="margin-top:16px;">
+            <label>Motorista</label>
+            <div class="driver-row ${motoristas.length ? 'has-select' : ''}">
+              ${motoristas.length ? `
+                <select id="driverSelect">
+                  <option value="">— Selecionar motorista —</option>
+                  ${motoristas.map((m) => `<option value="${esc(m.nome)}" ${m.nome === driverName ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}
+                  <option value="__manual__" ${driverName && !motoristas.some(m => m.nome === driverName) ? 'selected' : ''}>Outro motorista…</option>
+                </select>
+              ` : ''}
+            </div>
+            ${(!motoristas.length || driverName === '__manual__' || (driverName && !motoristas.some(m => m.nome === driverName))) ? `
+              <div class="driver-row">
+                <input type="text" id="driverNameInput" placeholder="Nome do motorista" value="${esc(driverName === '__manual__' ? '' : driverName)}" />
+                <input type="tel" id="driverPhoneInput" placeholder="WhatsApp (DDI+DDD+nº)" value="${esc(driverPhone)}" />
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="actions">
+            <a class="primary btn-maps" id="openMapsBtn" target="_blank" rel="noopener">Abrir no Maps</a>
+            <a class="primary btn-wpp" id="sendWppBtn" target="_blank" rel="noopener">Enviar no WhatsApp</a>
+          </div>
+          <div class="actions">
+            <button class="primary btn-save" id="saveBtn">Salvar rota (histórico + planilha)</button>
+          </div>
+
+          <div class="preview" id="preview"></div>
+        </div>
+
+        <div class="card">
+          <h2>Histórico de rotas</h2>
+          <div id="histList"></div>
+        </div>
+      </div>
+      <div class="toast" id="toast"></div>
+    `;
+
+    renderStops();
+    renderHistory();
+    bindStaticEvents();
+    updatePreviewAndLinks();
+  }
+
+  function clienteDatalist() {
+    return `<datalist id="clientesList">${clientes.map((c) => `<option value="${esc(c.nome)}"></option>`).join('')}</datalist>`;
+  }
+
+  function renderStops() {
+    const list = root.querySelector('#stopsList');
+    list.innerHTML = clienteDatalist() + stops.map((s, i) => `
+      <div class="stop" data-i="${i}">
+        <div class="stop-num">${i + 1}</div>
+        <input type="text" class="stop-name" list="clientesList" placeholder="Oficina/Costureira — selecione ou digite" value="${esc(s.name)}" />
+        <div class="stop-grid2">
+          <input type="text" class="stop-addr" placeholder="Endereço completo" value="${esc(s.addr)}" />
+          <select class="stop-tipo">
+            ${TIPOS.map((t) => `<option value="${t}" ${s.tipo === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <input type="text" class="stop-obs" placeholder="Observação (ex: deixar 3 peças, coletar 5 prontas)" value="${esc(s.obs)}" />
+        <div class="stop-actions">
+          <button class="remove-btn" ${stops.length <= 1 ? 'disabled' : ''}>remover</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.stop').forEach((el) => {
+      const i = Number(el.dataset.i);
+      const nameInput = el.querySelector('.stop-name');
+      const addrInput = el.querySelector('.stop-addr');
+
+      nameInput.addEventListener('input', (e) => {
+        stops[i].name = e.target.value;
+        const match = clientes.find((c) => c.nome.toLowerCase() === e.target.value.trim().toLowerCase());
+        if (match && !stops[i].addr) {
+          stops[i].addr = match.endereco;
+          addrInput.value = match.endereco;
+        }
+        updatePreviewAndLinks();
+      });
+      addrInput.addEventListener('input', (e) => { stops[i].addr = e.target.value; updatePreviewAndLinks(); });
+      el.querySelector('.stop-tipo').addEventListener('change', (e) => { stops[i].tipo = e.target.value; updatePreviewAndLinks(); });
+      el.querySelector('.stop-obs').addEventListener('input', (e) => { stops[i].obs = e.target.value; updatePreviewAndLinks(); });
+      el.querySelector('.remove-btn').addEventListener('click', () => { stops.splice(i, 1); renderStops(); updatePreviewAndLinks(); });
+    });
+  }
+
+  function renderHistory() {
+    const el = root.querySelector('#histList');
+    if (loadingHistory) { el.innerHTML = '<div class="loading">Carregando histórico…</div>'; return; }
+    if (history.length === 0) { el.innerHTML = '<div class="empty">Nenhuma rota salva ainda.</div>'; return; }
+    const sorted = [...history].sort((a, b) => b.savedAt - a.savedAt);
+    el.innerHTML = sorted.map((r) => `
+      <div class="hist-item" data-id="${r.id}">
+        <div class="hist-info">
+          <div class="hist-date">${formatDate(r.savedAt)}</div>
+          <div class="hist-route">${esc(r.routeLabel)}${r.motorista ? ' · ' + esc(r.motorista) : ''}</div>
+          <div class="hist-synced">${r.synced ? '✓ na planilha' : 'não sincronizado com a planilha'}</div>
+        </div>
+        <div class="hist-actions">
+          <a href="${r.mapsUrl}" target="_blank" rel="noopener">Maps</a>
+          <button class="hist-del">excluir</button>
+        </div>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('.hist-del').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('.hist-item').dataset.id;
+        try {
+          await window.storage.delete('rota:' + id, false);
+          history = history.filter((r) => r.id !== id);
+          renderHistory();
+          showToast('Rota excluída do histórico local');
+        } catch (e) { showToast('Não foi possível excluir'); }
+      });
+    });
+  }
+
+  function bindStaticEvents() {
+    root.querySelector('#fixedName').addEventListener('input', updatePreviewAndLinks);
+    root.querySelector('#toggleSettings').addEventListener('click', () => { showSettings = !showSettings; render(); });
+    root.querySelector('#loadTodayBtn').addEventListener('click', loadTodayFromSheet);
+
+    const urlInput = root.querySelector('#scriptUrlInput');
+    if (urlInput) {
+      root.querySelector('#saveUrlBtn').addEventListener('click', async () => {
+        scriptUrl = urlInput.value.trim();
+        try {
+          await window.storage.set('config:script-url', scriptUrl, false);
+          showToast('URL salva — carregando dados da planilha…');
+          await loadFromSheets();
+          render();
+        } catch (e) { showToast('Erro ao salvar a URL'); }
+      });
+    }
+
+    const driverSelect = root.querySelector('#driverSelect');
+    if (driverSelect) {
+      driverSelect.addEventListener('change', (e) => {
+        driverName = e.target.value;
+        const m = motoristas.find((x) => x.nome === driverName);
+        driverPhone = m ? m.telefone : '';
+        render();
+      });
+    }
+    const driverNameInput = root.querySelector('#driverNameInput');
+    if (driverNameInput) driverNameInput.addEventListener('input', (e) => { driverName = e.target.value; updatePreviewAndLinks(); });
+    const driverPhoneInput = root.querySelector('#driverPhoneInput');
+    if (driverPhoneInput) driverPhoneInput.addEventListener('input', (e) => { driverPhone = e.target.value; updatePreviewAndLinks(); });
+
+    root.querySelector('#addStopBtn').addEventListener('click', () => {
+      stops.push({ name: '', addr: '', tipo: 'Entrega', obs: '' });
+      renderStops(); updatePreviewAndLinks();
+    });
+    root.querySelector('#saveBtn').addEventListener('click', saveRoute);
+  }
+
+  function tipoLabel(tipo) {
+    if (tipo === 'Coleta') return 'Coletar';
+    if (tipo === 'Entrega') return 'Deixar';
+    if (tipo === 'Coleta e Entrega') return 'Coletar e deixar';
+    return 'Visita';
+  }
+
+  function mapTipoMovimentacao(tipo) {
+    if (/retirada/i.test(tipo)) return 'Coleta';
+    if (/envio.*retirada|retirada.*envio/i.test(tipo)) return 'Coleta e Entrega';
+    if (/envio/i.test(tipo)) return 'Entrega';
+    return 'Visita';
+  }
+
+  async function loadTodayFromSheet() {
+    if (!scriptUrl) { showToast('Conecte a planilha primeiro'); return; }
+    loadingToday = true; render();
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await fetch(scriptUrl + '?action=movimentacoes&data=' + today);
+      const json = await res.json();
+      if (!json.ok) { showToast('Planilha: ' + (json.erro || 'erro ao buscar movimentações')); loadingToday = false; render(); return; }
+      if (!json.data.length) { showToast('Nenhuma movimentação registrada para hoje na planilha'); loadingToday = false; render(); return; }
+
+      stops = json.data.map((m) => {
+        const clienteMatch = clientes.find((c) => c.nome.toLowerCase() === m.oficina.toLowerCase());
+        const partesObs = [m.produto, m.quantidade, m.observacao].filter(Boolean).join(' — ');
+        return {
+          name: m.oficina,
+          addr: m.endereco || (clienteMatch ? clienteMatch.endereco : ''),
+          tipo: mapTipoMovimentacao(m.tipo),
+          obs: partesObs
+        };
+      });
+      const primeiraComMotorista = json.data.find((m) => m.motorista);
+      if (primeiraComMotorista) {
+        driverName = primeiraComMotorista.motorista;
+        const m = motoristas.find((x) => x.nome.toLowerCase() === driverName.toLowerCase());
+        if (m) driverPhone = m.telefone;
+      }
+      showToast(`${stops.length} parada(s) carregada(s) da planilha`);
+    } catch (e) {
+      showToast('Não consegui buscar a rota de hoje na planilha');
+    }
+    loadingToday = false;
+    render();
+  }
+
+  function buildData() {
+    const fixedName = root.querySelector('#fixedName').value.trim() || FIXED_NAME;
+    const validStops = stops.filter((s) => s.addr.trim());
+    const addresses = [FIXED_ADDR, ...validStops.map((s) => s.addr), FIXED_ADDR];
+    const mapsUrl = 'https://www.google.com/maps/dir/' +
+      addresses.map((a) => encodeURIComponent(a).replace(/%20/g, '+')).join('/');
+
+    const names = [fixedName, ...validStops.map((s) => s.name || s.addr.split(',')[0])];
+    const routeLabel = 'Rota — ' + names.join(' → ') + ' → ' + fixedName;
+
+    let msg = routeLabel + '\n\n';
+    msg += fixedName + '\n' + FIXED_ADDR + '\n\n';
+    validStops.forEach((s) => {
+      msg += (s.name || '(sem nome)') + ' (' + tipoLabel(s.tipo) + ')\n' + s.addr + '\n';
+      if (s.obs.trim()) msg += 'Obs: ' + s.obs.trim() + '\n';
+      msg += '\n';
+    });
+    msg += 'Retorno ' + fixedName + '\n\n';
+    msg += mapsUrl;
+
+    return { fixedName, validStops, mapsUrl, routeLabel, msg };
+  }
+
+  function updatePreviewAndLinks() {
+    const { validStops, mapsUrl, routeLabel, msg } = buildData();
+    const preview = root.querySelector('#preview');
+    const mapsBtn = root.querySelector('#openMapsBtn');
+    const wppBtn = root.querySelector('#sendWppBtn');
+    const saveBtn = root.querySelector('#saveBtn');
+    const ready = validStops.length > 0;
+
+    if (ready) {
+      preview.style.display = 'block';
+      preview.textContent = msg;
+      mapsBtn.href = mapsUrl; mapsBtn.classList.remove('disabled');
+      const phone = (driverPhone || '').replace(/\D/g, '');
+      wppBtn.href = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      wppBtn.classList.remove('disabled');
+      saveBtn.disabled = false;
+    } else {
+      preview.style.display = 'none';
+      mapsBtn.href = '#'; mapsBtn.classList.add('disabled');
+      wppBtn.href = '#'; wppBtn.classList.add('disabled');
+      saveBtn.disabled = true;
+    }
+  }
+
+  async function saveRoute() {
+    const { mapsUrl, routeLabel, validStops } = buildData();
+    const id = String(Date.now());
+    let synced = false;
+
+    if (scriptUrl) {
+      try {
+        const payload = {
+          motorista: driverName === '__manual__' ? '' : driverName,
+          telefone: driverPhone,
+          resumo: routeLabel,
+          link: mapsUrl,
+          paradas: validStops
+        };
+        const url = scriptUrl + '?action=salvar&data=' + encodeURIComponent(JSON.stringify(payload));
+        const res = await fetch(url);
+        const json = await res.json();
+        synced = !!json.ok;
+        if (!synced) showToast('Salvo localmente, mas a planilha recusou: ' + (json.erro || 'erro desconhecido'));
+      } catch (e) {
+        showToast('Salvo localmente — não consegui falar com a planilha agora');
+      }
+    }
+
+    const record = {
+      id, savedAt: Date.now(), routeLabel, mapsUrl,
+      motorista: driverName === '__manual__' ? '' : driverName,
+      synced
+    };
+    try {
+      await window.storage.set('rota:' + id, JSON.stringify(record), false);
+      history.push(record);
+      renderHistory();
+      if (synced) showToast('Rota salva e exportada para a planilha');
+      else if (!scriptUrl) showToast('Rota salva no histórico (conecte a planilha para exportar)');
+    } catch (e) {
+      showToast('Erro ao salvar — tente novamente');
+    }
+  }
+
+  async function loadHistory() {
+    loadingHistory = true; renderHistory();
+    try {
+      const list = await window.storage.list('rota:', false);
+      const keys = (list && list.keys) || [];
+      const records = [];
+      for (const k of keys) {
+        try { const res = await window.storage.get(k, false); if (res && res.value) records.push(JSON.parse(res.value)); }
+        catch (e) { /* skip */ }
+      }
+      history = records;
+    } catch (e) { history = []; }
+    loadingHistory = false; renderHistory();
+  }
+
+  async function loadFromSheets() {
+    if (!scriptUrl) { sheetsStatus = 'off'; return; }
+    try {
+      const [rc, rm] = await Promise.all([
+        fetch(scriptUrl + '?action=clientes').then((r) => r.json()),
+        fetch(scriptUrl + '?action=motoristas').then((r) => r.json())
+      ]);
+      clientes = rc.ok ? rc.data : [];
+      motoristas = rm.ok ? rm.data : [];
+      sheetsStatus = (rc.ok && rm.ok) ? 'on' : 'error';
+      if (!rc.ok) showToast('Planilha: ' + (rc.erro || 'erro ao ler Oficinas'));
+      if (!rm.ok) showToast('Planilha: ' + (rm.erro || 'erro ao ler Motoristas'));
+    } catch (e) {
+      sheetsStatus = 'error';
+      showToast('Não consegui conectar à planilha — confira a URL');
+    }
+  }
+
+  async function loadConfigAndInit() {
+    try {
+      const res = await window.storage.get('config:script-url', false);
+      if (res && res.value) scriptUrl = res.value;
+    } catch (e) { /* not set yet */ }
+    await loadFromSheets();
+    render();
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  let toastTimer;
+  function showToast(text) {
+    const t = root.querySelector('#toast'); if (!t) return;
+    t.textContent = text; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  render();
+  loadHistory();
+  loadConfigAndInit();
+})();
+</script>
