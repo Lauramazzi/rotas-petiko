@@ -105,7 +105,7 @@ function salvarRota(ss, dataStr) {
   var sheet = ss.getSheetByName('Rotas');
   if (!sheet) {
     sheet = ss.insertSheet('Rotas');
-    sheet.appendRow(['Data/Hora', 'Motorista', 'Telefone', 'Resumo da rota', 'Detalhes (JSON)', 'Link Maps']);
+    sheet.appendRow(['Data/Hora', 'Motorista', 'Telefone', 'Resumo da rota', 'Link Maps']);
   }
   var obj;
   try {
@@ -118,7 +118,6 @@ function salvarRota(ss, dataStr) {
     obj.motorista || '',
     obj.telefone || '',
     obj.resumo || '',
-    JSON.stringify(obj.paradas || []),
     obj.link || ''
   ]);
   return { ok: true };
