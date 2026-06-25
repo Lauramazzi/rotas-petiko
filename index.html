@@ -145,6 +145,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
 
 <script>
+  // Polyfill: window.storage → localStorage (compatível com qualquer browser)
+  if (!window.storage) {
+    window.storage = {
+      async get(key) {
+        const value = localStorage.getItem(key);
+        return value !== null ? { value } : null;
+      },
+      async set(key, value) {
+        localStorage.setItem(key, value);
+      },
+      async delete(key) {
+        localStorage.removeItem(key);
+      },
+      async list(prefix) {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(prefix)) keys.push(k);
+        }
+        return { keys };
+      }
+    };
+  }
 (function () {
   const root = document.getElementById('rotas-app');
 
