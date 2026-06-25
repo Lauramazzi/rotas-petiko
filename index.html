@@ -25,11 +25,11 @@
     padding: 14px 20px; display: flex; align-items: baseline; gap: 10px;
     margin-bottom: 26px;
   }
-  #rotas-app .topbar .logo {
-    font-family: 'Caveat', 'Segoe Script', cursive; font-size: 28px; font-weight: 700;
-    color: var(--route); line-height: 1;
+  #rotas-app .topbar .logo img {
+    height: 44px;
+    width: auto;
+    display: block;
   }
-  #rotas-app .topbar .logo .dot { color: var(--gold); }
   #rotas-app .topbar .pagetitle { font-weight: 800; font-size: 15.5px; color: var(--ink); }
 
   #rotas-app .wrap { max-width: 660px; margin: 0 auto; padding: 0 16px; }
@@ -191,7 +191,7 @@
   function render() {
     root.innerHTML = `
       <div class="topbar">
-        <span class="logo">Petik<span class="dot">o</span></span>
+        <span class="logo"><img src="logo.png" alt="Petiko" /></span>
         <span class="pagetitle">Rotas — Oficinas e Costureiras</span>
       </div>
       <div class="wrap">
