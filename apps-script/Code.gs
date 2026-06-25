@@ -127,3 +127,92 @@ function salvarRota(ss, dataStr) {
 function jsonOut(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+
+// ─────────────────────────────────────────────────────────────
+// DROPDOWN DE OFICINAS + PREENCHIMENTO AUTOMÁTICO DE ENDEREÇO
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Trigger automático: quando o usuário seleciona uma oficina na coluna "Oficina"
+ * da aba Movimentações, preenche automaticamente a coluna "Endereço".
+ * Funciona sem configuração extra — o Google Sheets chama onEdit() sozinho.
+ */
+function onEdit(e) {
+  var sheet = e.range.getSheet();
+  if (sheet.getName() !== 'Movimentações') return;
+
+  var headerRow = sheet.getRange(4, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var idx = indexarCabecalho(headerRow);
+
+  var oficinaCol = (idx['Oficina'] !== undefined ? idx['Oficina'] : -1) + 1;
+  var enderecoCol = (idx['Endereço'] !== undefined ? idx['Endereço'] : -1) + 1;
+
+  if (oficinaCol <= 0 || enderecoCol <= 0) return;
+  if (e.range.getColumn() !== oficinaCol) return;
+  if (e.range.getRow() <= 4) return; // linha 4 é cabeçalho
+
+  var oficinaNome = (e.value || '').trim();
+  if (!oficinaNome) {
+    sheet.getRange(e.range.getRow(), enderecoCol).clearContent();
+    return;
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var oficinasSheet = ss.getSheetByName('Oficinas');
+  if (!oficinasSheet) return;
+
+  var rows = oficinasSheet.getDataRange().getValues();
+  var oIdx = indexarCabecalho(rows[3]); // cabeçalho na linha 4 (índice 3)
+
+  for (var i = 4; i < rows.length; i++) {
+    var nome = String(rows[i][oIdx['Nome']] || '').trim();
+    if (nome.toLowerCase() === oficinaNome.toLowerCase()) {
+      var endereco = String(rows[i][oIdx['Endereço']] || '').trim();
+      sheet.getRange(e.range.getRow(), enderecoCol).setValue(endereco);
+      return;
+    }
+  }
+}
+
+/**
+ * Execute UMA VEZ manualmente (Executar > setupDropdownOficinas) para criar
+ * o dropdown de seleção na coluna "Oficina" da aba Movimentações.
+ * Depois disso o onEdit cuida do resto automaticamente.
+ */
+function setupDropdownOficinas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var oficinasSheet = ss.getSheetByName('Oficinas');
+  var movSheet = ss.getSheetByName('Movimentações');
+
+  if (!oficinasSheet) { SpreadsheetApp.getUi().alert('Aba "Oficinas" não encontrada!'); return; }
+  if (!movSheet)       { SpreadsheetApp.getUi().alert('Aba "Movimentações" não encontrada!'); return; }
+
+  // Coleta nomes da aba Oficinas
+  var rows = oficinasSheet.getDataRange().getValues();
+  var oIdx = indexarCabecalho(rows[3]);
+  var nomes = [];
+  for (var i = 4; i < rows.length; i++) {
+    var nome = String(rows[i][oIdx['Nome']] || '').trim();
+    if (nome) nomes.push(nome);
+  }
+
+  if (!nomes.length) { SpreadsheetApp.getUi().alert('Nenhuma oficina encontrada na aba "Oficinas".'); return; }
+
+  // Descobre em qual coluna fica "Oficina" na aba Movimentações
+  var header = movSheet.getRange(4, 1, 1, movSheet.getLastColumn()).getValues()[0];
+  var mIdx = indexarCabecalho(header);
+  var oficinaCol = (mIdx['Oficina'] !== undefined ? mIdx['Oficina'] : -1) + 1;
+
+  if (oficinaCol <= 0) { SpreadsheetApp.getUi().alert('Coluna "Oficina" não encontrada na linha 4 da aba Movimentações.'); return; }
+
+  // Aplica validação (dropdown) nas linhas 5 até 1000
+  var range = movSheet.getRange(5, oficinaCol, 996, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(nomes, true)
+    .setAllowInvalid(true)
+    .build();
+  range.setDataValidation(rule);
+
+  SpreadsheetApp.getUi().alert('✅ Dropdown configurado com ' + nomes.length + ' oficinas!\nAgora ao selecionar uma oficina o endereço será preenchido automaticamente.');
+}
+
