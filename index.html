@@ -139,6 +139,132 @@
     pointer-events: none; z-index: 50; font-family: 'Nunito', sans-serif;
   }
   #rotas-app .toast.show { opacity: 1; }
+
+  /* Login Screen Styles */
+  #rotas-app .login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 30% 30%, #E3F2F6 0%, #DCE6EA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  #rotas-app .login-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    padding: 36px 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 12px 40px rgba(0, 50, 60, 0.12);
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+  }
+  #rotas-app .login-logo {
+    margin-bottom: 24px;
+  }
+  #rotas-app .login-logo img {
+    height: 56px;
+    width: auto;
+    margin: 0 auto;
+    display: block;
+  }
+  #rotas-app .login-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  #rotas-app .login-subtitle {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-family: 'Nunito', sans-serif;
+  }
+  #rotas-app .login-field {
+    margin-bottom: 18px;
+    text-align: left;
+  }
+  #rotas-app .login-input-wrapper {
+    position: relative;
+  }
+  #rotas-app .login-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Nunito', sans-serif;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #rotas-app .login-input:focus {
+    outline: none;
+    border-color: var(--route);
+    box-shadow: 0 0 0 3px var(--route-light);
+  }
+  #rotas-app .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    user-select: none;
+  }
+  #rotas-app .login-remember input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--route);
+    margin: 0;
+  }
+  #rotas-app .login-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    transition: background 0.2s, transform 0.1s;
+  }
+  #rotas-app .login-btn:hover {
+    background: #003e4e;
+  }
+  #rotas-app .login-btn:active {
+    transform: scale(0.98);
+  }
+  #rotas-app .login-error {
+    color: var(--pin);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    min-height: 20px;
+    font-family: 'Nunito', sans-serif;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #rotas-app .shake {
+    animation: shake 0.4s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
 </style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -191,7 +317,88 @@
   let sheetsStatus = 'off';
   let loadingToday = false;
 
+  // Controle de Senha do Aplicativo
+  const DEFAULT_PASSWORD_HASH = '7054e65f45001aefcae8fe1941693306395cd69cb017861a8b21066cea2800f6'; // sha256 de "petiko123"
+  let appPasswordHash = DEFAULT_PASSWORD_HASH;
+  let loggedIn = (localStorage.getItem('rotas-auth') === 'true' || sessionStorage.getItem('rotas-auth') === 'true');
+  let loginErrorMsg = '';
+
+  async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function renderLogin() {
+    root.innerHTML = `
+      <div class="login-overlay">
+        <div class="login-card" id="loginCard">
+          <div class="login-logo">
+            <img src="logo.svg" alt="Petiko" />
+          </div>
+          <div class="login-title">Acesso Restrito</div>
+          <div class="login-subtitle">Digite a senha para acessar o painel de rotas.</div>
+          
+          <form id="loginForm" onsubmit="return false;">
+            <div class="login-field">
+              <label for="loginPassword">Senha</label>
+              <div class="login-input-wrapper">
+                <input type="password" id="loginPassword" class="login-input" placeholder="Digite a senha" required autocomplete="current-password" autofocus />
+              </div>
+            </div>
+            
+            <label class="login-remember">
+              <input type="checkbox" id="loginRemember" />
+              Lembrar-me neste dispositivo
+            </label>
+            
+            <button type="submit" class="login-btn" id="loginBtn">Entrar</button>
+            <div class="login-error" id="loginError">${esc(loginErrorMsg)}</div>
+          </form>
+        </div>
+      </div>
+    `;
+    
+    const form = root.querySelector('#loginForm');
+    const pwdInput = root.querySelector('#loginPassword');
+    const rememberCheckbox = root.querySelector('#loginRemember');
+    const card = root.querySelector('#loginCard');
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pwd = pwdInput.value;
+      const hash = await sha256(pwd);
+      
+      if (hash === appPasswordHash) {
+        loggedIn = true;
+        loginErrorMsg = '';
+        if (rememberCheckbox.checked) {
+          localStorage.setItem('rotas-auth', 'true');
+        } else {
+          sessionStorage.setItem('rotas-auth', 'true');
+        }
+        render();
+      } else {
+        loginErrorMsg = 'Senha incorreta. Tente novamente.';
+        const errDiv = root.querySelector('#loginError');
+        if (errDiv) errDiv.textContent = loginErrorMsg;
+        
+        card.classList.remove('shake');
+        void card.offsetWidth; // trigger reflow
+        card.classList.add('shake');
+        
+        pwdInput.value = '';
+        pwdInput.focus();
+      }
+    });
+  }
+
   function render() {
+    if (!loggedIn) {
+      renderLogin();
+      return;
+    }
     root.innerHTML = `
       <div class="topbar">
         <span class="logo"><img src="logo.svg" alt="Petiko" /></span>
@@ -216,6 +423,26 @@
           <div class="hint">A chave protege os dados — nunca compartilhe. Fica salva só no seu browser.</div>
           <div class="actions">
             <button class="primary btn-save" id="saveUrlBtn">Salvar e conectar</button>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--line); margin: 20px 0;" />
+          
+          <h2>Senha de Acesso</h2>
+          <label>Alterar senha de acesso (local)</label>
+          <input type="password" id="newPasswordInput" placeholder="Nova senha" />
+          <div class="hint">Será exigida nos próximos acessos neste navegador.</div>
+          
+          <div class="hint" id="newHashContainer" style="display:none; background:var(--route-light); padding:12px; border-radius:10px; margin-top:8px; font-family:monospace; word-break:break-all; border: 1px solid var(--line);">
+            <strong>Novo Hash SHA-256:</strong><br>
+            <span id="newHashText" style="color:var(--route-dark); font-weight:700;"></span><br>
+            <span style="font-family:'Nunito',sans-serif;font-size:11.5px;color:var(--muted);display:block;margin-top:6px;line-height:1.4;">
+              Para tornar essa senha definitiva para todos os dispositivos e usuários, edite o código de <code>index.html</code> e altere a constante <code>DEFAULT_PASSWORD_HASH</code> para o hash acima.
+            </span>
+          </div>
+          
+          <div class="actions" style="margin-top:12px;">
+            <button class="primary btn-save" id="changePasswordBtn">Salvar senha</button>
+            <button class="primary" id="logoutBtn" style="background:#6b7989; color:#fff;">Sair / Logout</button>
           </div>
         </div>
         ` : ''}
@@ -383,6 +610,45 @@
           await loadFromSheets();
           render();
         } catch (e) { showToast('Erro ao salvar a URL'); }
+      });
+    }
+
+    const changePasswordBtn = root.querySelector('#changePasswordBtn');
+    if (changePasswordBtn) {
+      changePasswordBtn.addEventListener('click', async () => {
+        const newPwd = root.querySelector('#newPasswordInput').value.trim();
+        if (!newPwd) {
+          showToast('Digite uma senha válida');
+          return;
+        }
+        const hash = await sha256(newPwd);
+        try {
+          await window.storage.set('config:app-password-hash', hash, false);
+          appPasswordHash = hash;
+          
+          const hashText = root.querySelector('#newHashText');
+          const hashContainer = root.querySelector('#newHashContainer');
+          if (hashText && hashContainer) {
+            hashText.textContent = hash;
+            hashContainer.style.display = 'block';
+          }
+          
+          root.querySelector('#newPasswordInput').value = '';
+          showToast('Senha alterada localmente!');
+        } catch (e) {
+          showToast('Erro ao salvar nova senha');
+        }
+      });
+    }
+
+    const logoutBtn = root.querySelector('#logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('rotas-auth');
+        sessionStorage.removeItem('rotas-auth');
+        loggedIn = false;
+        render();
+        showToast('Você saiu do sistema');
       });
     }
 
@@ -579,6 +845,10 @@
   }
 
   async function loadConfigAndInit() {
+    try {
+      const rph = await window.storage.get('config:app-password-hash', false);
+      if (rph && rph.value) appPasswordHash = rph.value;
+    } catch (e) { /* usa defaults */ }
     try {
       const res = await window.storage.get('config:script-url', false);
       if (res && res.value) scriptUrl = res.value;
